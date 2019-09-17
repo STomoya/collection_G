@@ -47,12 +47,15 @@ def send_line(message:str, file_path:dict=None, token=LINE_NOTIFY_TOKEN):
         token : str (default : LINE_NOTIFY_TOKEN)
             The token that you have registered
     """
+    if not token:
+        _raise_no_notify_token_exception()
     if not requests:
         _raise_no_module_exception(module="requests", recommend="send_line_message()")
+    
     url = "https://notify-api.line.me/api/notify"
     headers = {"Authorization" : "Bearer " + token}
-
     payload = {"message" : message}
+
     if file_path:
         abs_path = os.path.abspath(file_path)
         files = {"imageFile" : open(abs_path, "rb")}

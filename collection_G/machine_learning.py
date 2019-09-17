@@ -11,6 +11,12 @@ try:
 except:
     sklearn = None
 
+# Exceptions
+class MachineLearningException(Exception):
+    """base exception class for machine learning"""
+def _raise_no_sklearn_exception():
+    raise MachineLearningException("No \'sklearn\' installed in your machine.")
+
 def split_data(X, y, validation=True, random_state=None, val_random_state=None, test_size=0.2, val_size=0.2):
     """
     splits data, using 'train_test_split'
@@ -50,6 +56,8 @@ def split_data(X, y, validation=True, random_state=None, val_random_state=None, 
         y_test : array
             Labels for y_test.
     """
+    if not sklearn:
+        _raise_no_sklearn_exception()
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=random_state, test_size=0.2)
     if validation:
         X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, random_state=val_random_state, test_size=val_size)
@@ -71,6 +79,8 @@ def encode_target(target, target_name=True):
         onehot_targets : array
             The labels, encoded to one-hot vectors
     """
+    if not sklearn:
+        _raise_no_sklearn_exception()
     try:
         reshaped = target.reshape(-1, 1)
     except AttributeError:
