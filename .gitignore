@@ -1,6 +1,6 @@
 
 # secret files
-/secret/
+secret.py
 
 # Created by https://www.gitignore.io/api/osx,venv,linux,macos,python,windows,virtualenv,visualstudiocode
 # Edit at https://www.gitignore.io/?templates=osx,venv,linux,macos,python,windows,virtualenv,visualstudiocode
