@@ -37,6 +37,15 @@ def _raise_no_module_exception(module, recommend=None):
 def send_line(message:str, file_path:dict=None, token=LINE_NOTIFY_TOKEN):
     """
     Send line, using requests.
+    TODO: support line stamps
+
+    argument
+        message : str
+            The message you want to send.
+        file_path : str (default : None)
+            The path to a file you want to send.
+        token : str (default : LINE_NOTIFY_TOKEN)
+            The token that you have registered
     """
     if not requests:
         _raise_no_module_exception(module="requests", recommend="send_line_message()")
