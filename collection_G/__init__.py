@@ -7,3 +7,5 @@ from .internet import send_email
 
 from .machine_learning import split_data
 from .machine_learning import encode_target
+from .machine_learning import plot_confusion_matrix
+from .machine_learning import plot_keras_history

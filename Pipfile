@@ -8,6 +8,12 @@ verify_ssl = true
 [packages]
 requests = "*"
 sklearn = "*"
+matplotlib = ""
+seaborn = "*"
+pandas = "*"
+tensorflow = "*"
+tensorflow-gpu = "*"
+keras = "*"
 
 [requires]
 python_version = "3.6"
