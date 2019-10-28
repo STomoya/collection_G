@@ -10,8 +10,14 @@ try:
     import torch
 except:
     torch = None
+try:
+    import matplotlib.pyplot as plt
+except:
+    plt = None
 
 from ._exception import *
+
+# TODO:Make a function for 2 input 1 output model for research on multimodal representation
 
 def torch_fit(
     model,
@@ -30,6 +36,10 @@ def torch_fit(
     This function only allows a single input and a single output.
     If you are using a multi-input or multi-output model,
     you will have to write your oun training function.
+
+    TODO:TEST THIS FUNCTION
+    TODO:Make multi input output possible
+    TODO:add more frequent verbose
 
     argument
         model
@@ -128,6 +138,85 @@ def torch_fit(
                 print('Train Acc : {:.5f}'.format(history.history['train']['accuracy'][-1]))
     
     return model, history
+
+def torch_eval(
+    model,
+    test_dataloader,
+    criterion
+):
+    """
+    Evaluation function for PyTorch models
+
+    Only for one input, one output model
+
+    TODO:finish making this function
+
+    argument
+        model
+            Model to evaluate
+        test_dataloader
+            torch.utils.data.DataLoader object for testing
+        criterion
+            Loss function
+    """
+
+
+def plot_torch_history(
+    history,
+    save=True,
+    filename='./torch_history.py'
+):
+    """
+    Plotter for torch history
+
+    Cannot plot history function
+    that dose not contain information about validation.
+
+    TODO:Make it possible to plot without having validation data
+
+    argument
+        history
+            A History object.
+            History object is returned from torch_fit function
+        save
+            If True, a png file will be saved
+        filename
+            The file name of the saving image
+    """
+    if not plt:
+        raise_no_module_error('matplotlib')
+
+    train_loss = history.history['train']['loss']
+    val_loss = history.history['val']['loss']
+    train_acc = history.history['train']['accuracy']
+    val_acc = history.history['val']['accuracy']
+
+    if len(val_acc) == 0:
+        raise Exception('No validation')
+    
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(train_loss)
+    plt.plot(val_loss)
+    plt.title('Model Loss')
+    plt.xlabel('epoch')
+    plt.ylabel('loss')
+    plt.legend(['train', 'validation'], loc='upper left')
+
+    plt.subplot(1, 2, 2)
+    plt.plot(train_acc)
+    plt.plot(val_acc)
+    plt.title('Model Accuracy')
+    plt.xlabel('epoch')
+    plt.ylabel('accuracy')
+    plt.legend(['train', 'validation'], loc='upper left')
+
+    plt.tight_layout()
+
+    if save:
+        plt.figsave(filename)
+    plt.show()
+
 
 class History:
     def __init__(self):
