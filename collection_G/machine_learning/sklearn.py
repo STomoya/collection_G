@@ -1,4 +1,8 @@
+"""
+Functions around machine learning
 
+for sklearn
+"""
 
 # scikit-learn must be installed
 try:
@@ -15,7 +19,17 @@ try:
 except:
     sns = None
 
-def split_data(X, y, validation=True, random_state=None, val_random_state=None, test_size=0.2, val_size=0.2):
+from ._exception import *
+
+def split_data(
+    X,
+    y,
+    validation=True,
+    random_state=None,
+    val_random_state=None,
+    test_size=0.2,
+    val_size=0.2
+):
     """
     splits data, using 'train_test_split'
 
@@ -55,7 +69,7 @@ def split_data(X, y, validation=True, random_state=None, val_random_state=None, 
             Labels for y_test.
     """
     if not sklearn:
-        _raise_no_module_exception('sklearn')
+        raise_no_module_exception('sklearn')
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=random_state, test_size=0.2)
     if validation:
         X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, random_state=val_random_state, test_size=val_size)
@@ -63,7 +77,10 @@ def split_data(X, y, validation=True, random_state=None, val_random_state=None, 
     else:
         return X_train, X_test, y_train, y_test
 
-def encode_target(target, target_name=True):
+def encode_target(
+    target,
+    target_name=True
+):
     """
     Encode target to one-hot vectors
 
@@ -93,7 +110,12 @@ def encode_target(target, target_name=True):
         target_names = encoder.get_feature_names()
         return onehot_targets, target_names
 
-def plot_confusion_matrix(matrix, labels, save=True, filename='confusion_matrix.png'):
+def plot_confusion_matrix(
+    matrix,
+    labels,
+    save=True,
+    filename='confusion_matrix.png'
+):
     '''
     confusion matrix plotter
 
@@ -109,7 +131,7 @@ def plot_confusion_matrix(matrix, labels, save=True, filename='confusion_matrix.
             the name of the file when saving
     '''
     if not plt:
-        _raise_no_module_exception('matplotlib')
+        raise_no_module_exception('matplotlib')
     if sns:
         confusion_matrix_df = pd.DataFrame(matrix, index=labels, columns=labels)
         plt.figure()

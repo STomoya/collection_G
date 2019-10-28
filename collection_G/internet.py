@@ -34,7 +34,11 @@ def _raise_no_module_exception(module, recommend=None):
         message = "You do not have \'{}\' installed.".format(module)
     raise InternetException(message)
 
-def send_line(message:str, file_path:dict=None, token=LINE_NOTIFY_TOKEN):
+def send_line(
+    message:str,
+    file_path:dict=None,
+    token=LINE_NOTIFY_TOKEN
+):
     """
     Send line, using requests.
     TODO: support line stamps
@@ -64,7 +68,10 @@ def send_line(message:str, file_path:dict=None, token=LINE_NOTIFY_TOKEN):
         requests.post(url, headers=headers, params=payload)
 
 
-def send_line_message(message:str, token=LINE_NOTIFY_TOKEN):
+def send_line_message(
+    message:str,
+    token=LINE_NOTIFY_TOKEN
+):
     """
     Send line message.
     Does not support sending images.
@@ -90,7 +97,13 @@ def send_line_message(message:str, token=LINE_NOTIFY_TOKEN):
     except Exception as e:
         print("Exception on Notify : ", e)
 
-def send_email(message, subject, to_addr, from_addr=ADDRESS, password=PASSWORD):
+def send_email(
+    message,
+    subject,
+    to_addr,
+    from_addr=ADDRESS,
+    password=PASSWORD
+):
     """
     Send email.
     Does not support file attachment.

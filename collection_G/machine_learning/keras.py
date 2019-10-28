@@ -1,5 +1,7 @@
 """
 Functions around machine learning
+
+for keras
 """
 
 try:
@@ -9,13 +11,13 @@ try:
 except:
     plt = None
 
-# Exceptions
-class MachineLearningException(Exception):
-    """base exception class for machine learning"""
-def _raise_no_module_exception(module):
-    raise MachineLearningException("No \'{}\' installed in your machine.".format(module))
+from ._exception import *
         
-def plot_keras_history(history, save=True, filename='keras_history.png'):
+def plot_keras_history(
+    history,
+    save=True,
+    filename='keras_history.png'
+):
     '''
     keras history plotter
 
@@ -31,7 +33,7 @@ def plot_keras_history(history, save=True, filename='keras_history.png'):
     '''
 
     if not plt:
-        _raise_no_module_exception('matplotlib')
+        raise_no_module_exception('matplotlib')
 
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
