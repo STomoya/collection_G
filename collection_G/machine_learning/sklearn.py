@@ -69,7 +69,7 @@ def split_data(
             Labels for y_test.
     """
     if not sklearn:
-        raise_no_module_exception('sklearn')
+        raise_no_module_error('sklearn')
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=random_state, test_size=0.2)
     if validation:
         X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, random_state=val_random_state, test_size=val_size)
@@ -131,7 +131,7 @@ def plot_confusion_matrix(
             the name of the file when saving
     '''
     if not plt:
-        raise_no_module_exception('matplotlib')
+        raise_no_module_error('matplotlib')
     if sns:
         confusion_matrix_df = pd.DataFrame(matrix, index=labels, columns=labels)
         plt.figure()

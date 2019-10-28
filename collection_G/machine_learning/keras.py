@@ -33,7 +33,7 @@ def plot_keras_history(
     '''
 
     if not plt:
-        raise_no_module_exception('matplotlib')
+        raise_no_module_error('matplotlib')
 
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
