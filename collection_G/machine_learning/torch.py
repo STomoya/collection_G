@@ -90,7 +90,7 @@ def torch_fit(
         print('EPOCH {} / {}'.format(epoch, epochs))
         epoch_start = time.time()
         for phase in phases:
-            if phase = 'train':
+            if phase == 'train':
                 model.train(True)
                 dataset = train_dataloader
             else:
