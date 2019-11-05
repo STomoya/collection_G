@@ -26,6 +26,8 @@ def torch_fit(
     criterion,
     epochs,
     validation_dataloader=None,
+    save_model=True,
+    save_path='./model_param',
     verbose=True,
 ):
     """
@@ -56,6 +58,11 @@ def torch_fit(
         validation_dataloader
             torch.utils.data.DataLoader object for validation
             The handled dataset must "return data, target"
+        save_model
+            If True the model parameters will be saved,
+            using torch.save(model.state_dict(), save_path)
+        save_path
+            The path to save the best parameters of the model
         verbose
             If True, the log for each epoch will be outputed
     
@@ -80,10 +87,12 @@ def torch_fit(
         model = torch.nn.DataParallel(model)
     model.to(device)
     history = History()
+    history.save_path = save_path
     if not validation_dataloader == None:
         phases = ['train', 'val']
     else:
         phases = ['train']
+    best_accuracy = 0.0
 
     # training
     for epoch in range(1, epochs+1):
@@ -119,7 +128,7 @@ def torch_fit(
                 
                 # summing up loss and correct prediction
                 loss        += batch_loss.item()
-                _, prediction = torch.max(output.data, 1)
+                _, prediction = output.max(1)
                 correct     += (prediction == target).sum().item()
                 batch_count += 1
             # epoch loss and accuracy calculation
@@ -136,8 +145,14 @@ def torch_fit(
                 print(   'Val Acc : {:.5f}'.format(history.history['val']['accuracy'][-1]))
             else:
                 print('Train Acc : {:.5f}'.format(history.history['train']['accuracy'][-1]))
-    
-    return model, history
+        if history.history['val']['accuracy'][-1] > best_accuracy:
+            if save_model:
+                torch.save(model.state_dict(), save_path)
+                print('Model saved to {}'.format(save_path))
+            history.best_epoch = epoch + 1
+            best_accuracy = history.history['val']['accuracy'][-1]
+
+    return history
 
 def torch_eval(
     model,
@@ -159,10 +174,36 @@ def torch_eval(
         criterion
             Loss function
     """
+    # pytorch must be installed
+    if not torch:
+        raise_no_module_error('torch')
+    # initualizations
+    # for gpu usage
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    if torch.cuda.device_count() > 1:
+        print('Using', torch.cuda.device_count(), 'GPUs.')
+        model = torch.nn.DataParallel(model)
+    model.to(device)
 
+    correct = 0
+    loss    = 0
+    model.train(False)
+    with torch.no_grad():
+        for (data, target) in test_dataloader:
+            data   = data.to(device)
+            target = target.to(device)
+
+            output = model(data)
+            batch_loss = criterion(output, target)
+            loss += batch_loss.item()
+            _, predicted = output.max(1)
+            correct += (predicted == target).sum().item()
+    print('Test Loss     : {:.5f}'.format(loss/len(test_dataloader.dataset)))
+    print('Test Accuracy : {:.5f}'.format(100*correct/len(test_dataloader.dataset)))
 
 def plot_torch_history(
     history,
+    show=True,
     save=True,
     filename='./torch_history.png'
 ):
@@ -215,7 +256,8 @@ def plot_torch_history(
 
     if save:
         plt.savefig(filename)
-    plt.show()
+    if show:
+        plt.show()
 
 
 class History:
@@ -230,3 +272,7 @@ class History:
                 'accuracy' : []
             }
         }
+        self.save_path = None
+        self.best_epoch = None
+
+
