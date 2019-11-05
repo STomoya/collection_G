@@ -164,7 +164,7 @@ def torch_eval(
 def plot_torch_history(
     history,
     save=True,
-    filename='./torch_history.py'
+    filename='./torch_history.png'
 ):
     """
     Plotter for torch history
