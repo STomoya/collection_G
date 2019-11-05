@@ -214,7 +214,7 @@ def plot_torch_history(
     plt.tight_layout()
 
     if save:
-        plt.figsave(filename)
+        plt.savefig(filename)
     plt.show()
 
 
