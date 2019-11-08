@@ -92,7 +92,7 @@ def torch_fit(
         phases = ['train', 'val']
     else:
         phases = ['train']
-    best_accuracy = 0.0
+    best_loss = 100.
 
     # training
     for epoch in range(1, epochs+1):
@@ -112,7 +112,7 @@ def torch_fit(
             for index, (data, target) in enumerate(dataset, 1):
                 # to device
                 # gpu or cpu, depends on your env
-                data   = data.to(device)
+                data   = data.type(torch.FloatTensor).to(device)
                 target = target.to(device)
 
                 # batch loss calculation
@@ -145,12 +145,12 @@ def torch_fit(
                 print(   'Val Acc : {:.5f}'.format(history.history['val']['accuracy'][-1]))
             else:
                 print('Train Acc : {:.5f}'.format(history.history['train']['accuracy'][-1]))
-        if history.history['val']['accuracy'][-1] > best_accuracy:
+        if history.history['val']['loss'][-1] < best_loss:
             if save_model:
                 torch.save(model.state_dict(), save_path)
                 print('Model saved to {}'.format(save_path))
             history.best_epoch = epoch + 1
-            best_accuracy = history.history['val']['accuracy'][-1]
+            best_loss = history.history['val']['loss'][-1]
 
     return history
 
@@ -258,6 +258,8 @@ def plot_torch_history(
         plt.savefig(filename)
     if show:
         plt.show()
+    
+    plt.close()
 
 
 class History:
