@@ -11,13 +11,108 @@ try:
 except:
     torch = None
 try:
+    import matplotlib
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
 except:
     plt = None
 
 from ._exception import *
 
-# TODO:Make a function for 2 input 1 output model for research on multimodal representation
+# TODO: Make a function for 2 input 1 output model for research on multimodal representation
+# NOTE: separating cuda settings from functions might make saving and loading parameters easier
+
+def torch_train_flow(
+    model,
+    optimizer,
+    criterion,
+    epochs,
+    train_dataloader,
+    validation_dataloader,
+    test_dataloader,
+    save_model_path='./model_param',
+    save_img_path='./loss_acc_curve.png',
+    verbose=True
+):
+    """
+    Runs the whole training sequence for PyTorch models
+
+    flow
+        train
+            ->
+            plot loss and accuracy curve
+                ->
+                load best parameters to model
+                    ->
+                    evaluate
+
+    # TODO: TEST THIS FUNCTION
+    
+    argument
+        model
+            The model to train
+        optimizer
+            The optimizer function to train the model
+        criterion
+            The loss function to train the model
+        epochs
+            The number of epochs to run
+        *_dataloader
+            The data loaders, corresponding to the name
+        save_model_path
+            The path to save the model
+        save_img_path
+            The path to save the figure
+            the filename must have '.png'
+        verbose
+            If True The loss and accuracy of each epoch
+            will be printed to sys.stdout.
+    """
+
+    # train model
+    history = torch_fit(
+        model=model,
+        train_dataloader=train_dataloader,
+        optimizer=optimizer,
+        criterion=criterion,
+        epochs=epochs,
+        validation_dataloader=validation_dataloader,
+        save_model=True,
+        save_path=save_model_path,
+        verbose=verbose
+    )
+
+    # print best epoch
+    print('Best Epoch : {}'.format(history.best_epoch))
+
+    # plot history
+    plot_torch_history(
+        history=history,
+        show=False,
+        save=True,
+        filename=save_img_path
+    )
+
+    # load the best parameters to the model
+    state_dict = torch.load(history.save_path)
+    # NOTE:
+    # If the saved model was on GPU the keys contain 'module.',
+    # which should be erased to be used on to models on CPU
+    if torch.cuda.is_available():
+        from collections import OrderedDict
+        new_state_dict = OrderedDict()
+        for key, value in state_dict.items():
+            name = key[7:]
+            new_state_dict[name] = value
+        state_dict = new_state_dict
+    model.load_state_dict(state_dict)
+
+    torch_eval(
+        model=model,
+        test_dataloader=test_dataloader,
+        criterion=criterion
+    )
+
 
 def torch_fit(
     model,
@@ -39,7 +134,6 @@ def torch_fit(
     If you are using a multi-input or multi-output model,
     you will have to write your oun training function.
 
-    TODO:TEST THIS FUNCTION
     TODO:Make multi input output possible
     TODO:add more frequent verbose
 
@@ -164,8 +258,6 @@ def torch_eval(
 
     Only for one input, one output model
 
-    TODO:finish making this function
-
     argument
         model
             Model to evaluate
@@ -190,7 +282,7 @@ def torch_eval(
     model.train(False)
     with torch.no_grad():
         for (data, target) in test_dataloader:
-            data   = data.to(device)
+            data   = data.type(torch.FloatTensor).to(device)
             target = target.to(device)
 
             output = model(data)
@@ -213,7 +305,7 @@ def plot_torch_history(
     Cannot plot history function
     that dose not contain information about validation.
 
-    TODO:Make it possible to plot without having validation data
+    # TODO: erase show option. we will never show figures anymore.
 
     argument
         history
@@ -257,7 +349,7 @@ def plot_torch_history(
     if save:
         plt.savefig(filename)
     if show:
-        plt.show()
+        pass
     
     plt.close()
 
