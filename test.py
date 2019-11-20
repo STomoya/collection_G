@@ -51,3 +51,6 @@ from collection_G import plot_keras_history
 # model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 # history = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, verbose=1, validation_data=(x_test, y_test))
 # plot_keras_history(history)
+
+from collection_G import unique_filename
+print(unique_filename('png', base='aaa'))
