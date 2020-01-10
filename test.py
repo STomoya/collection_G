@@ -53,4 +53,4 @@ from collection_G import plot_keras_history
 # plot_keras_history(history)
 
 from collection_G import unique_filename
-print(unique_filename('png', base='aaa'))
+# print(unique_filename('png', base='aaa'))

@@ -4,6 +4,7 @@ Functions around machine learning
 for pytorch
 """
 
+import copy
 import time
 
 try:
@@ -70,7 +71,7 @@ def torch_train_flow(
     """
 
     # train model
-    history = torch_fit(
+    history, best_model = torch_fit(
         model=model,
         train_dataloader=train_dataloader,
         optimizer=optimizer,
@@ -88,27 +89,13 @@ def torch_train_flow(
     # plot history
     plot_torch_history(
         history=history,
-        show=False,
         save=True,
         filename=save_img_path
     )
 
-    # load the best parameters to the model
-    state_dict = torch.load(history.save_path)
-    # NOTE:
-    # If the saved model was on GPU the keys contain 'module.',
-    # which should be erased to be used on to models on CPU
-    if torch.cuda.is_available():
-        from collections import OrderedDict
-        new_state_dict = OrderedDict()
-        for key, value in state_dict.items():
-            name = key[7:]
-            new_state_dict[name] = value
-        state_dict = new_state_dict
-    model.load_state_dict(state_dict)
-
+    # evaluate on test
     torch_eval(
-        model=model,
+        model=best_model,
         test_dataloader=test_dataloader,
         criterion=criterion
     )
@@ -120,7 +107,7 @@ def torch_fit(
     optimizer,
     criterion,
     epochs,
-    validation_dataloader=None,
+    validation_dataloader,
     save_model=True,
     save_path='./model_param',
     verbose=True,
@@ -180,73 +167,95 @@ def torch_fit(
         print('Using', torch.cuda.device_count(), 'GPUs.')
         model = torch.nn.DataParallel(model)
     model.to(device)
+
     history = History()
     history.save_path = save_path
-    if not validation_dataloader == None:
-        phases = ['train', 'val']
-    else:
-        phases = ['train']
     best_loss = 100.
 
     # training
     for epoch in range(1, epochs+1):
         print('EPOCH {} / {}'.format(epoch, epochs))
         epoch_start = time.time()
-        for phase in phases:
-            if phase == 'train':
-                model.train(True)
-                dataset = train_dataloader
-            else:
-                model.train(False)
-                dataset = validation_dataloader
-            loss        = 0
-            correct     = 0
-            batch_count = 0
+
+        # training phase
+        phase = 'train'
+        model.train(True)
+        dataset = train_dataloader
+        loss        = 0
+        correct     = 0
+        # loop for batch
+        for index, (data, target) in enumerate(dataset, 1):
+            # to device
+            data   = data.type(torch.FloatTensor).to(device)
+            target = target.to(device)
+
+            # batch loss calculation
+            output = model(data)
+            batch_loss = criterion(output, target)
+
+            # optimization
+            optimizer.zero_grad()
+            batch_loss.backward()
+            optimizer.step()
+            
+            # summing up loss and correct prediction
+            loss        += batch_loss.item()
+            _, prediction = output.max(1)
+            correct     += (prediction == target).sum().item()
+        # epoch loss and accuracy calculation
+        history.history[phase]['loss'].append(loss / len(dataset))
+        history.history[phase]['accuracy'].append(100 * correct / len(dataset.dataset))
+
+        # validation phase
+        phase = 'val'
+        model.train(False)
+        dataset = validation_dataloader
+        with torch.no_grad():    # for less memory usage
+            loss    = 0
+            correct = 0
             # loop for batch
             for index, (data, target) in enumerate(dataset, 1):
-                # to device
-                # gpu or cpu, depends on your env
+                # data to device
                 data   = data.type(torch.FloatTensor).to(device)
                 target = target.to(device)
 
-                # batch loss calculation
+                # forward and loss
                 output = model(data)
                 batch_loss = criterion(output, target)
 
-                # optimization
-                # only on training
-                if phase == 'train':
-                    optimizer.zero_grad()
-                    batch_loss.backward()
-                    optimizer.step()
-                
-                # summing up loss and correct prediction
+                # summing loss and correct predictions
                 loss        += batch_loss.item()
                 _, prediction = output.max(1)
                 correct     += (prediction == target).sum().item()
-                batch_count += 1
-            # epoch loss and accuracy calculation
-            history.history[phase]['loss'].append(loss / batch_count)
+
+            # saving epoch loss and accuracy
+            history.history[phase]['loss'].append(loss / len(dataset))
             history.history[phase]['accuracy'].append(100 * correct / len(dataset.dataset))
         
         # verbose
         if verbose:
             print('sec {:.2f}[s]'.format(time.time() - epoch_start),                  end='\t')
             print('Train loss : {:.5f}'.format(history.history['train']['loss'][-1]), end='\t')
-            if not validation_dataloader == None:
-                print( 'Train Acc : {:.5f}'.format(history.history['train']['accuracy'][-1]), end='\t')
-                print(  'Val loss : {:.5f}'.format(history.history['val']['loss'][-1]),       end='\t')
-                print(   'Val Acc : {:.5f}'.format(history.history['val']['accuracy'][-1]))
-            else:
-                print('Train Acc : {:.5f}'.format(history.history['train']['accuracy'][-1]))
+            print( 'Train Acc : {:.5f}'.format(history.history['train']['accuracy'][-1]), end='\t')
+            print(  'Val loss : {:.5f}'.format(history.history['val']['loss'][-1]),       end='\t')
+            print(   'Val Acc : {:.5f}'.format(history.history['val']['accuracy'][-1]))
+
+        # saving model
+        # looking at validation loss
         if history.history['val']['loss'][-1] < best_loss:
             if save_model:
+                # deepcopy, for return
+                best_state_dict = copy.deepcopy(model.state_dict())
+                # output to binary file
                 torch.save(model.state_dict(), save_path)
                 print('Model saved to {}'.format(save_path))
             history.best_epoch = epoch + 1
             best_loss = history.history['val']['loss'][-1]
 
-    return history
+    # loading best weights to model
+    model.load_state_dict(best_state_dict)
+
+    return history, model
 
 def torch_eval(
     model,
@@ -287,6 +296,7 @@ def torch_eval(
 
             output = model(data)
             batch_loss = criterion(output, target)
+
             loss += batch_loss.item()
             _, predicted = output.max(1)
             correct += (predicted == target).sum().item()
@@ -295,7 +305,6 @@ def torch_eval(
 
 def plot_torch_history(
     history,
-    show=True,
     save=True,
     filename='./torch_history.png'
 ):
@@ -304,8 +313,6 @@ def plot_torch_history(
 
     Cannot plot history function
     that dose not contain information about validation.
-
-    # TODO: erase show option. we will never show figures anymore.
 
     argument
         history
@@ -323,9 +330,6 @@ def plot_torch_history(
     val_loss = history.history['val']['loss']
     train_acc = history.history['train']['accuracy']
     val_acc = history.history['val']['accuracy']
-
-    if len(val_acc) == 0:
-        raise Exception('No validation')
     
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
@@ -348,8 +352,6 @@ def plot_torch_history(
 
     if save:
         plt.savefig(filename)
-    if show:
-        pass
     
     plt.close()
 
