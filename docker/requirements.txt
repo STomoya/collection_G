@@ -1,0 +1,9 @@
+requests
+sklearn
+matplotlib
+seaborn
+pandas
+tensorflow
+tensorflow-gpu
+keras
+torch
