@@ -1,7 +1,7 @@
 
-# Docker enviorment
+# Docker enviornment
 
-Docker enviorment for testing
+Docker enviornment for testing
 
 ## Requirement
 
