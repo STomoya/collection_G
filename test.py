@@ -54,3 +54,6 @@ from collection_G import plot_keras_history
 
 from collection_G import unique_filename
 # print(unique_filename('png', base='aaa'))
+
+from collection_G import pytorch
+# print(pytorch.PyTorchTrainer())
